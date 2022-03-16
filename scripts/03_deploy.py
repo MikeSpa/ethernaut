@@ -25,7 +25,7 @@ def main():
     print(network.show_active())
     account = get_account()
     # coin_flip_attack = deploy_AttackCoinFlip(
-    #     "0xAF9D1Ae7D98f7623207DD54b44D689D60B9a5212"
+    #     "0xAF9D1Ae7D98f7623207DD54b44D689D60B9a5212"  //Ethernaut CoinFlip instance
     # )
     coin_flip_attack = AttackCoinFlip[-1]
     for i in range(10):
