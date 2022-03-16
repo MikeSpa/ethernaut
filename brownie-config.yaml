@@ -1,0 +1,20 @@
+# dependencies
+dependencies:
+
+compiler:
+  solc:
+    remappings:
+
+# networks
+networks:
+  development:
+    verify: False
+  rinkeby:
+    verify: False
+    
+
+# wallets
+dotenv:
+  .env
+wallets:
+  from_key: ${PRIVATE_KEY_CHROME_MM}
