@@ -22,7 +22,6 @@ def main():
     vault_address = "0x12f6EDd889480b0d49503Fda0618c600710b8aC3"
     vault = Contract.from_abi(Vault._name, vault_address, Vault.abi)
     print(vault.locked())
-    print(p)
     p = w3.eth.get_storage_at(vault.address, 1)
     print(p)
     vault.unlock(p, {"from": account})
