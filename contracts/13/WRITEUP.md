@@ -20,11 +20,25 @@ We need to play with the amount of gas.
 
 ### Gate Three
 
-.
+We need to find an 8 bytes key with three condition:
+ - `uint32(uint64(_gateKey)) == uint16(uint64(_gateKey))`
+        -> bits 16 to 32 need to be 0
+        -> so 0x0000
+ - `uint32(uint64(_gateKey)) != uint64(_gateKey)`
+        -> bits 32 to 64 cannot be all 0
+        -> can be anything we want except 0x00000000, let's choose 0x6d696b65
+ - `uint32(uint64(_gateKey)) == uint16(tx.origin)`
+        -> bits 0 to 16 need to be the same as tx.origin (and 16 to 32 need to be 0 (condition 1))
+        -> so 0xFFFF
+
+We use the bitwise and operators (`&`) with the mask we just created to get our key: tx.origin & 0x6d696b650000FFFF
 
 ---
 ### msg.sender vs tx.origin
 Like in a previous challenge, msg.sender is whoever call a gicen function, either a EOA or a contract, and tx.origin is whoever is at the origin of the transaction, always an EOA.
+
+### Bitwise operations
+Bit operators: `&`, `|`, `^` (bitwise exclusive or), `~` (bitwise negation)
 
 
 
