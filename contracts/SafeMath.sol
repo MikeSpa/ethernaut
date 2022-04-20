@@ -26,4 +26,9 @@ library SafeMath {
         // assert(a == b * c + a % b); // There is no case in which this doesn't hold
         return a / b;
     }
+
+    function mod(uint256 a, uint256 b) internal pure returns (uint256) {
+        require(b != 0);
+        return a % b;
+    }
 }
