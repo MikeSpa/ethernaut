@@ -3,7 +3,7 @@
 Success condition:
 > Make it past the gatekeeper and register as an entrant to pass this level.
 
-We need to pass the three modifier. Modifier gateOne simply require that the `msg.sender` is different from `tx.origin`. We can easily pass that by having a contract call the GatekeeperOne instance. Modifier gateTwo require a specific gaz amount left, we can determine how much gaz to sent in order of having the wanted gas left when we enter the second modifier. Modifier gateThree require a specific key that pass different conditions based on the our EOA address.
+We need to pass the three modifier. Modifier gateOne simply require that the `msg.sender` is different from `tx.origin`. We can easily pass that by having a contract call the GatekeeperOne instance. Modifier gateTwo require a specific gaz amount left, we can determine how much gas to sent in order of having the wanted gas left when we enter the second modifier. Modifier gateThree require a specific key that pass different conditions based on the our EOA address.
 
 ### Gate One
 
@@ -16,7 +16,18 @@ We create an attack contract: `AttackGatekeeperOne.sol`.
 ```require(gasleft().mod(8191) == 0);```
 
 
-We need to play with the amount of gas.
+We need to play with the amount of gas. Instead of trying to calculate exactly how much gas we had spent until this point I decided to brute force it.
+
+```
+for (uint256 i = 0; i < 8191; i++) {  // loop 
+            (bool result, ) = victim.call{gas: 24000 + i}(  // modify the gas by one
+                abi.encodeWithSignature(("enter(bytes8)"), key)  // call the fct enter with our key
+            );
+            if (result) { // if call success (no revert)
+                break;  // end the loop
+            }
+        }
+```
 
 ### Gate Three
 
@@ -40,8 +51,7 @@ Like in a previous challenge, msg.sender is whoever call a gicen function, eithe
 ### Bitwise operations
 Bit operators: `&`, `|`, `^` (bitwise exclusive or), `~` (bitwise negation)
 
-
-
-
 ---
 ## Level completed!
+
+Well done! Next, try your hand with the second gatekeeper...

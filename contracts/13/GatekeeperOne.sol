@@ -36,7 +36,7 @@ contract GatekeeperOne {
     function enter(bytes8 _gateKey)
         public
         gateOne
-        // gateTwo
+        gateTwo
         gateThree(_gateKey)
         returns (bool)
     {
