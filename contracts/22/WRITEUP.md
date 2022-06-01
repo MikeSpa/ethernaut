@@ -5,7 +5,22 @@ Success condition:
 You will start with 10 tokens of token1 and 10 of token2. The DEX contract starts with 100 of each token.  
 You will be successful in this level if you manage to drain all of at least 1 of the 2 tokens from the contract, and allow the contract to report a "bad" price of the assets.
 
+We can see by looking at the Dex contract, and more precisely at `getSwapPrice()` function that we can exploit the way the swap amount is calculated. The dex start with supply of 100 for each token, and we start with 10 and 10. If we first swap 10 of token1, we will receive 10 of token2. We now have 0-20, But then dex has 110-90. Now when we swap our 20 of token2, the dex will send us (20 * 110 / 90) = 24, according to the `getSwapPrice()` function:
+```
+return ((amount * IERC20(to).balanceOf(address(this))) /
+    IERC20(from).balanceOf(address(this)));
+```
 
+Our next swap we give us 24 * 110 / 86 = 30 of token1. As we can see, we can use the low liquidity of the pool to manipulate the price of the two token. As a token supply decrease compare to the other one (in the pool) its value increase, so when we go for a swap we get more of the second token. If we keep going, we get 41 of token1 and finally 65 of token2. Now we are at 0-65, the dex is at 110-45. If we tried to swap our 65 token we should receive 65*100/45 = 158 and since the dex doesn't have enough, the transaction revert here: `IERC20(to).transferFrom(address(this), msg.sender, swapAmount);` We need to calculate how many token to swap to completly emtpy the supply of the other token:
+```
+uint256 amount = dex.balanceOf(from, address(this));
+uint256 amountReceived = dex.getSwapPrice(from, to, amount);
+if (amountReceived > 110) {
+    newAmount = (amount * 110) / amountReceived;
+}
+```
+
+After this last swap we shuld have a supply of 110 of one token and 20 of the other. We successfully beat the exchange.
 
 ---
 ### 
