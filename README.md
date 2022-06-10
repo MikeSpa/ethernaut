@@ -6,6 +6,12 @@ For each level, there is a small writeup to understand the vulnerabilities and h
 Each level also has a brownie script to test the hack locally and on the real level instance on the rinkeby testnet. 
 When necessary, attack contract are also provided. I tried to use solidity contract as much as possible to attack instead of relying on Web3 command.
 
+
+## Files
+
+The "contracts" folder contains for each level its own folder with the solidity code of the level, the code of the attack contract and a writeup to explain the exploit.  
+In the "scripts" folder, each level has its own brownie script that deploy the attack contract and perform the attack.
+
 # 1 Fallout
 
 We need to take ownership of the contract and withdraw its balance.
