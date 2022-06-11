@@ -43,7 +43,7 @@ def main():
     print(f"Delegation deployed at \t {delegation}")
     print(f"Delegation owner is \t {delegation.owner()}")
 
-    # find the keccak hash if "pwn()""
+    # find the keccak hash of "pwn()"
     hash = Web3.keccak(text="pwn()").hex()
     hash = hash[: 8 + 2]  # take the first 4 bytes + "0x"
 
