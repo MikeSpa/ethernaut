@@ -19,3 +19,6 @@ dotenv:
   .env
 wallets:
   from_key: ${PRIVATE_KEY_CHROME_MM}
+infura:
+  infura_key: ${WEB3_INFURA_PROJECT_ID}
+  

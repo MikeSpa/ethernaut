@@ -1,4 +1,4 @@
-# 22) Dex Two
+# 23) Dex Two
 
 Success condition:
 > This level will ask you to break DexTwo, a subtlely modified Dex contract from the previous level, in a different way.  
@@ -9,7 +9,7 @@ This level is similar to the previous one, but we can see that the swap function
 
 We will create a new ERC20 token and swap our own newly make token for the two token present on the dex, we just need to figured out how much to swap to get the entire supply of token 1and 2. If we look at `getSwapAmount()`:
 
-```
+```js
 function getSwapAmount(
         address from,
         address to,
