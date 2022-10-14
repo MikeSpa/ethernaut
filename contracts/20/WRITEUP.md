@@ -4,7 +4,7 @@ Success condition:
 > This is a simple wallet that drips funds over time. You can withdraw the funds slowly by becoming a withdrawing partner.  
 If you can deny the owner from withdrawing funds when they call withdraw() (whilst the contract still has funds, and the transaction is of 1M gas or less) you will win this level.
 
-We need to make sure that the owner cannot receive funds when they call ```ẁithdraw()```. Since we can't block them from calling the function, we will have to find a way to block them from executing the instruction that transfer the funds: ```owner.transfer(amountToSend);```.
+We need to make sure that the owner cannot receive funds when they call ```withdraw()```. Since we can't block them from calling the function, we will have to find a way to block them from executing the instruction that transfer the funds: ```owner.transfer(amountToSend);```.
 
 In order to do that, we just need to make sure the ```partner.call{value: amountToSend}("");``` uses enough gas that the next line cannot be executed. Since ```call{value: smth}``` will call the ```receive()``` function in a contract, we can create a simple attack contract with a ```receive()``` function. In this function we can do anything we want that will waste all the gas given for the transaction. My contract has an infinite loop with ```owner.transfer(address(this).balance);``` inside. Once the transaction run out of gas, we know that the next instruction ```owner.transfer(amountToSend);``` cannot be executed and the level is completed.
 

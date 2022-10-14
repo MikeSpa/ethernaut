@@ -10,7 +10,7 @@ If we transfer an amount of 21 token `balances[msg.sender] - _value >= 0` will b
 ```
 balances[msg.sender] - _value // 20 - 21 = 2^256 -1
 ```
-The uint245 will underflow and give us a huge number for our new balance.
+The uint256 will underflow and give us a huge number for our new balance.
 
 In the console, we simply call the transfer function of Token with any address as a first argument(here the contracts) and 21 as the value.
 

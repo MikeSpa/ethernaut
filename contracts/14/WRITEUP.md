@@ -43,7 +43,7 @@ So we take the address of our contract (`address(this)`) and XOR it with `uint64
 
 ---
 ### msg.sender vs tx.origin
-Like in a previous challenge, msg.sender is whoever call a gicen function, either a EOA or a contract, and tx.origin is whoever is at the origin of the transaction, always an EOA.
+Like in a previous challenge, msg.sender is whoever call a given function, either a EOA or a contract, and tx.origin is whoever is at the origin of the transaction, always an EOA.
 
 ### Bitwise operations
 Bit operators: `&`, `|`, `^` (bitwise exclusive or), `~` (bitwise negation)
